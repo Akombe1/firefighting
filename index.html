@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
-    
 <head>
     <meta charset="UTF-8">
     <title>Boston 3D Model</title>
@@ -46,27 +44,43 @@
         viewer.scene.globe.show = true;
 
         async function loadBostonOSM() {
-            // Load OSM Buildings
             const osmBuildings = await Cesium.createOsmBuildingsAsync();
             viewer.scene.primitives.add(osmBuildings);
 
-            // Fly camera to Boston
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(
-                    -71.0589,  // Longitude
-                    42.3601,   // Latitude
-                    1500       // Height above ground in meters
+                    -71.0589,
+                    42.3601,
+                    1500
                 ),
                 orientation: {
-                    heading: Cesium.Math.toRadians(0.0),  // Facing North
-                    pitch: Cesium.Math.toRadians(-30.0),  // Tilt camera downward
+                    heading: Cesium.Math.toRadians(0.0),
+                    pitch: Cesium.Math.toRadians(-30.0),
                     roll: 0.0
                 }
             });
-        }
+
+            osmBuildings.readyPromise.then(() => {
+                console.log('OSM Buildings are loaded.');
+
+                // Make half the buildings green
+                osmBuildings.tileVisible.addEventListener(function(tile) {
+                    const content = tile.content;
+                    const featuresLength = content.featuresLength;
+
+                    for (let i = 0; i < featuresLength; i++) {
+                        const feature = content.getFeature(i);
+
+                        if (i < featuresLength / 2) {
+                            feature.color = Cesium.Color.LIME.withAlpha(1.0);
+                        } else {
+                            feature.color = Cesium.Color.BLACK.withAlpha(1.0);
+                        }
+                    }
+                });
+            });
 
         loadBostonOSM();
     </script>
-    
 </body>
 </html>
