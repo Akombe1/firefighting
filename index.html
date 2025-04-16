@@ -57,8 +57,6 @@
         viewer.scene.backgroundColor = Cesium.Color.BLACK;
         viewer.scene.globe.show = true;
 
-        
-
         // Variables to track hover state
         let hoveredFeature = null;
         let originalFeatureColor = null;
@@ -69,17 +67,43 @@
             viewer.scene.primitives.add(osmBuildings);
 
             // Style every building yellow
+            // IDs you want to turn black one at a time
+            const fireElementIds = [
+                212122814,
+                29519607,
+                29936495,
+                468453872,
+                29520542,
+                687795567
+            ];
 
-            osmBuildings.style = new Cesium.Cesium3DTileStyle({
-                color: {
-                    conditions: [
-                        // If the building has element ID 29820890 → make it black
-                        ["${elementId} === 29820890", "color('black')"],
-                        // Otherwise → yellow
-                        ["true", "color('yellow')"]
-                    ]
+            let currentIndex = 0;
+            let activated = [];
+
+            function animateFires() {
+                if (currentIndex < fireElementIds.length) {
+                    activated.push(fireElementIds[currentIndex]);
+
+                    // Create style conditions dynamically
+                    const conditions = activated.map(id => [
+                        `\${elementId} === ${id}`, "color('black')"
+                    ]);
+
+                    // Default to yellow for others
+                    conditions.push(["true", "color('yellow')"]);
+
+                    osmBuildings.style = new Cesium.Cesium3DTileStyle({
+                        color: { conditions }
+                    });
+
+                    currentIndex++;
+                    setTimeout(animateFires, 5000); // Adjust interval as needed
                 }
-            });
+            }
+
+            // Start the animation after OSM buildings are loaded
+            animateFires();
+
 
 
             // Fly to Boston
