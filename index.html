@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Boston 3D Model</title>
+    <title>Boston 3D Model with Hover Effects</title>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
     <style>
@@ -17,25 +17,39 @@
             height: 100%;
             display: block;
         }
+        #tooltip {
+            position: absolute;
+            background: rgba(42, 42, 42, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            pointer-events: none;
+            font-family: sans-serif;
+            font-size: 14px;
+            display: none;
+            z-index: 999;
+        }
     </style>
 </head>
 <body>
     <div id="cesiumContainer"></div>
+    <div id="tooltip"></div>
 
     <script>
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxMmJhOGM3NC1lODg1LTQwNGMtYjQyMi1iZDcyYWVlZDA2OWIiLCJpZCI6MjkzNzAxLCJpYXQiOjE3NDQ1NzUwNjJ9.TjXvHHtDxvgQfR_Hb5xNwMGReqXgcvgDy8L5ZIlRHHM';
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMzc5NDg2MS0yMGMwLTQzMWEtYjM5MC02YjcyOTAwMjZjNzkiLCJpZCI6MjkzNzAxLCJpYXQiOjE3NDQ3NzUwNDR9.XkjkXbNgWkZ52VnTnI3eLkSBZmhq8f5m_vOZSV5lVSw';
 
         const viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: false,
             baseLayerPicker: false,
-            geocoder: false,
+            geocoder: true,
             homeButton: false,
             sceneModePicker: false,
-            navigationHelpButton: false,
+            navigationHelpButton: true,
             animation: false,
             timeline: false,
             fullscreenButton: false,
-            shouldAnimate: true
+            shouldAnimate: true,
+            selectionIndicator: false // We'll implement our own hover effect
         });
 
         viewer.scene.skyBox.show = false;
@@ -43,15 +57,37 @@
         viewer.scene.backgroundColor = Cesium.Color.BLACK;
         viewer.scene.globe.show = true;
 
+        
+
+        // Variables to track hover state
+        let hoveredFeature = null;
+        let originalFeatureColor = null;
+        const tooltip = document.getElementById('tooltip');
+
         async function loadBostonOSM() {
             const osmBuildings = await Cesium.createOsmBuildingsAsync();
             viewer.scene.primitives.add(osmBuildings);
 
+            // Style every building yellow
+
+            osmBuildings.style = new Cesium.Cesium3DTileStyle({
+                color: {
+                    conditions: [
+                        // If the building has element ID 29820890 → make it black
+                        ["${elementId} === 29820890", "color('black')"],
+                        // Otherwise → yellow
+                        ["true", "color('yellow')"]
+                    ]
+                }
+            });
+
+
+            // Fly to Boston
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(
-                    -71.0589,
-                    42.3601,
-                    1500
+                    -71.0589, // Longitude
+                    42.3601,  // Latitude
+                    1500      // Altitude in meters
                 ),
                 orientation: {
                     heading: Cesium.Math.toRadians(0.0),
@@ -60,25 +96,44 @@
                 }
             });
 
-            osmBuildings.readyPromise.then(() => {
-                console.log('OSM Buildings are loaded.');
+            // Set up hover interaction
+            viewer.screenSpaceEventHandler.setInputAction(function(movement) {
+                const pickedFeature = viewer.scene.pick(movement.endPosition);
+                
+                // Reset previously hovered feature
+                if (hoveredFeature && originalFeatureColor) {
+                    hoveredFeature.color = originalFeatureColor;
+                    hoveredFeature = null;
+                    originalFeatureColor = null;
+                    tooltip.style.display = 'none';
+                }
+                
+                // Highlight new hovered feature
+                //if (Cesium.defined(pickedFeature) {
+                if (Cesium.defined(pickedFeature)) {
 
-                // Make half the buildings green
-                osmBuildings.tileVisible.addEventListener(function(tile) {
-                    const content = tile.content;
-                    const featuresLength = content.featuresLength;
-
-                    for (let i = 0; i < featuresLength; i++) {
-                        const feature = content.getFeature(i);
-
-                        if (i < featuresLength / 2) {
-                            feature.color = Cesium.Color.LIME.withAlpha(1.0);
-                        } else {
-                            feature.color = Cesium.Color.BLACK.withAlpha(1.0);
-                        }
+                    hoveredFeature = pickedFeature;
+                    originalFeatureColor = pickedFeature.color.clone();
+                    
+                    // Highlight the building
+                    pickedFeature.color = Cesium.Color.YELLOW.withAlpha(1.0);
+                    
+                    // Show tooltip with building information
+                    const properties = pickedFeature.getPropertyNames();
+                    let tooltipText = "Building";
+                    
+                    // Try to get the building name if available
+                    if (properties.includes('name')) {
+                        tooltipText = pickedFeature.getProperty('name');
                     }
-                });
-            });
+                    
+                    tooltip.textContent = tooltipText;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (movement.endPosition.x + 10) + 'px';
+                    tooltip.style.top = (movement.endPosition.y + 10) + 'px';
+                }
+            }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        }
 
         loadBostonOSM();
     </script>
