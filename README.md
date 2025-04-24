@@ -1,6 +1,6 @@
 # The Future of Fire
 
-## Authors
+## Team Members
 Adrian Kombe and Abbie Kinaro
 
 ## Boston Fire Incident Prediction
