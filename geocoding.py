@@ -4,8 +4,7 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 # === SETTINGS ===
-INPUT_CSV = 'concatenated_address.csv'  # CSV must have a column named 'address'
-OUTPUT_CSV = 'geocoded_addresses.csv'
+CSV_FILE = 'dated_fires.csv'  # Same file for reading and writing
 WAIT_BETWEEN_CALLS = 1  # seconds, to respect API usage limits
 
 # === INITIALIZE GEOCODER ===
@@ -25,9 +24,9 @@ def geocode_address(address):
 
 # === MAIN ===
 def main():
-    df = pd.read_csv(INPUT_CSV)
+    df = pd.read_csv(CSV_FILE)
 
-    # Ensure columns for lat/lng
+    # Create latitude and longitude columns if they don't exist
     if 'latitude' not in df.columns:
         df['latitude'] = None
     if 'longitude' not in df.columns:
@@ -37,16 +36,17 @@ def main():
         if pd.notnull(row['latitude']) and pd.notnull(row['longitude']):
             continue  # Skip if already geocoded
 
-        lat, lng = geocode_address(row['full_address'])  # <- FIXED HERE
+        lat, lng = geocode_address(row['full_address'])  # Using the full_address column
         df.at[i, 'latitude'] = lat
         df.at[i, 'longitude'] = lng
         time.sleep(WAIT_BETWEEN_CALLS)
 
         print(f"✅ Row {i} — {row['full_address']} → ({lat}, {lng})")
 
-
-    df.to_csv(OUTPUT_CSV, index=False)
-    print(f"\n🎉 Done! Saved results to {OUTPUT_CSV}")
+    # Save back to the SAME FILE
+    df.to_csv(CSV_FILE, index=False)
+    print(f"\n🎉 Done! Updated '{CSV_FILE}' with geocoded coordinates!")
 
 if __name__ == '__main__':
     main()
+    

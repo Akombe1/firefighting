@@ -34,29 +34,29 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            color: white;
+            background-color: rgba(0, 0, 0, 1);
+            color: rgb(232, 153, 25);
             font-family: 'Segoe UI', sans-serif;
             font-size: 24px;
             font-weight: bold;
             text-align: center;
             padding: 12px 0;
             z-index: 1000;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 1);
         }
         #footerBanner {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            color: white;
+            background-color: rgba(0, 0, 0, 1);
+            color: rgb(232, 153, 25);
             font-family: 'Segoe UI', sans-serif;
             font-size: 16px;
             text-align: center;
             padding: 10px 0;
-            z-index: 1000;
-            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.6);
+            z-index: 800;
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 1);
         }
         #legend {
             position: absolute;
@@ -81,6 +81,59 @@
             border: 1px solid white;
             vertical-align: middle;
         }
+        #timeline {
+            position: absolute;
+            bottom: 10px; /* inside the background */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 30px;
+            z-index: 1000; /* higher so it appears above the background */
+        }
+        #timelineLine {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: white;
+            transform: translateY(-50%);
+            border-radius: 2px;
+        }
+        #timelineBackground {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 86%; /* slightly wider to give padding */
+            height: 68px;
+            background-color: rgba(0, 0, 0, 0.3); /* black with 30% opacity */
+            border-radius: 10px;
+            z-index: 999; /* just behind the timeline itself */
+        }
+
+
+        #timelineDot {
+            position: absolute;
+            top: 50%;
+            width: 16px;
+            height: 16px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: left 1s ease;
+        }
+
+        #timelineYear {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            transform: translateX(-50%);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
     </style>
 </head>
@@ -88,8 +141,24 @@
     <div id="banner">The Future of Fire Project</div>
     <div id="cesiumContainer"></div>
     <div id="tooltip"></div>
-    <div id="footerBanner">Created by Adrian Kombe and Abigail Kinaro</div>
+    <div id="footerBanner">Created by Adrian Kombe and Abigail Kinaro | 2025</div>
 
+    <div id="legend">
+        <div><span class="legend-color" style="background-color: red;"></span> Past Fire</div>
+        <div><span class="legend-color" style="background-color: greenyellow;"></span> Fire Station</div>
+        <div><span class="legend-color" style="background-color: yellow;"></span> Boston City Limits</div>
+
+    </div>
+
+    <div id="timelineBackground">
+        <div id="timeline">
+            <div id="timelineLine"></div>
+            <div id="timelineDot"></div>
+            <div id="timelineYear">2012</div>
+        </div>
+    </div>
+    
+    
     <script>
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMzc5NDg2MS0yMGMwLTQzMWEtYjM5MC02YjcyOTAwMjZjNzkiLCJpZCI6MjkzNzAxLCJpYXQiOjE3NDQ3NzUwNDR9.XkjkXbNgWkZ52VnTnI3eLkSBZmhq8f5m_vOZSV5lVSw';
 
@@ -108,8 +177,8 @@
             selectionIndicator: false // We'll implement our own hover effect
         });
 
-        viewer.scene.skyBox.show = false;
-        viewer.scene.skyAtmosphere.show = false;
+        viewer.scene.skyBox.show = true;
+        viewer.scene.skyAtmosphere.show = true;
         viewer.scene.backgroundColor = Cesium.Color.BLACK;
         viewer.scene.globe.show = true;
 
@@ -143,7 +212,9 @@
                 const conditions = [];
 
                 // ✅ Always make fire stations green
-                conditions.push(["${building} === 'fire_station'", "color('black')"]);
+                conditions.push(["${building} === 'fire_station'", "color('greenyellow')"]);
+                //conditions.push([`${building} === 'fire_station'`, "color('green')"]);
+
 
                 // 🔥 Add red for activated fire buildings
                 for (let i = 0; i < currentIndex; i++) {
@@ -152,7 +223,7 @@
                 }
 
                 // 🌟 Default color for everything else
-                conditions.push(["true", "color('yellow')"]);
+                conditions.push(["true", "color('grey')"]);
 
                 osmBuildings.style = new Cesium.Cesium3DTileStyle({
                     color: { conditions }
@@ -177,14 +248,51 @@
                 }
             });
         }
+        async function loadBostonBoundary() {
+            const cityOutline = await Cesium.GeoJsonDataSource.load('boston_boundary.json', {
+                stroke: Cesium.Color.YELLOW,       // Line color
+                fill: Cesium.Color.TRANSPARENT,     // No fill, just outline
+                strokeWidth: 30                      // Thickness of the boundary line
+            });
+            viewer.dataSources.add(cityOutline);
+        }
+        
+        // === TIMELINE ANIMATION ===
+        const timelineDot = document.getElementById('timelineDot');
+        const timelineYear = document.getElementById('timelineYear');
+        const timeline = document.getElementById('timeline');
+
+        const startYear = 2012;
+        const endYear = 2025;
+        const totalYears = endYear - startYear;
+        let currentYear = startYear;
+
+        function updateTimeline() {
+            const percent = (currentYear - startYear) / totalYears;
+            const timelineWidth = timeline.offsetWidth;
+            const dotPosition = percent * timelineWidth;
+
+            timelineDot.style.left = `${dotPosition}px`;
+            timelineYear.style.left = `${dotPosition}px`;
+            timelineYear.textContent = currentYear;
+        }
+
+        updateTimeline(); // Set initial position
+
+        const interval = setInterval(() => {
+            if (currentYear >= endYear) {
+                clearInterval(interval);
+                return;
+            }
+            currentYear++;
+            updateTimeline();
+        }, 5000); // 5 seconds per year
 
 
         loadBostonOSM();
+        loadBostonBoundary();
+
     </script>
-    <div id="legend">
-        <div><span class="legend-color" style="background-color: red;"></span> Fire</div>
-        <div><span class="legend-color" style="background-color: black;"></span> Fire Station</div>
-    </div>
     
 </body>
 </html>

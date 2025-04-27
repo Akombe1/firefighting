@@ -97,7 +97,7 @@ def get_project_details(project_url):
         if units_div:
             units = units_div.find('div', class_='field__item').text.strip()
         
-        return square_footage, units
+        return square_footage, address, units
         
     except Exception as e:
         print(f"Error scraping {project_url}: {str(e)}")

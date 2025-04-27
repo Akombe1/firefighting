@@ -13,4 +13,4 @@ def list_csv_columns(file_path):
         return []
 
 # Call the function AFTER it's defined, and use quotes around the path
-list_csv_columns("concatenated_address.csv")
+list_csv_columns("new_fire_data.csv")
