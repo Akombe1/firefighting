@@ -1,11 +1,16 @@
 import pandas as pd
 import time
 from geopy.geocoders import Nominatim
+import os
+from dotenv import load_dotenv
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 # === SETTINGS ===
-CSV_FILE = 'dated_fires.csv'  # Same file for reading and writing
-WAIT_BETWEEN_CALLS = 1  # seconds, to respect API usage limits
+CSV_FILE = 'confirmedFires_fixed.csv'  # Same file for reading and writing
+WAIT_BETWEEN_CALLS = 0.05  # seconds, to respect API usage limits
+
+load_dotenv("pass.env")
+api_key = os.getenv("API_KEY")
 
 # === INITIALIZE GEOCODER ===
 geolocator = Nominatim(user_agent="open-geocoder-script")
@@ -23,6 +28,7 @@ def geocode_address(address):
         return None, None
 
 # === MAIN ===
+
 def main():
     df = pd.read_csv(CSV_FILE)
 
@@ -32,7 +38,9 @@ def main():
     if 'longitude' not in df.columns:
         df['longitude'] = None
 
-    for i, row in df.iterrows():
+    start_index = 9403  # 👈 Start at row 9403
+
+    for i, row in df.iloc[start_index:].iterrows():
         if pd.notnull(row['latitude']) and pd.notnull(row['longitude']):
             continue  # Skip if already geocoded
 
@@ -43,10 +51,13 @@ def main():
 
         print(f"✅ Row {i} — {row['full_address']} → ({lat}, {lng})")
 
-    # Save back to the SAME FILE
+        # 🔥 Save progress every 100 rows
+        if i % 100 == 0 and i != 0:
+            df.to_csv(CSV_FILE, index=False)
+            print(f"💾 Auto-saved after {i} rows...")
+
+    # Final save after all rows are done
     df.to_csv(CSV_FILE, index=False)
     print(f"\n🎉 Done! Updated '{CSV_FILE}' with geocoded coordinates!")
-
 if __name__ == '__main__':
     main()
-    

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Boston 3D Model with Hover Effects</title>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.114/Build/Cesium/Cesium.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #tooltip {
+            position: absolute;
+            background: rgba(42, 42, 42, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            pointer-events: none;
+            font-family: sans-serif;
+            font-size: 14px;
+            display: none;
+            z-index: 999;
+        }
+        #banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 1);
+            color: rgb(232, 153, 25);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px 0;
+            z-index: 1000;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 1);
+        }
+        #footerBanner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 1);
+            color: rgb(232, 153, 25);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding: 10px 0;
+            z-index: 800;
+            box-shadow: 0 -2px 6px rgba(0, 0, 0, 1);
+        }
+        #legend {
+            position: absolute;
+            top: 180px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            padding: 12px;
+            border-radius: 6px;
+            z-index: 1000;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            min-width: 140px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border: 1px solid white;
+            vertical-align: middle;
+        }
+        #timeline {
+            position: absolute;
+            bottom: 10px; /* inside the background */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            height: 30px;
+            z-index: 1000; /* higher so it appears above the background */
+        }
+        #timelineLine {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: white;
+            transform: translateY(-50%);
+            border-radius: 2px;
+        }
+        #timelineBackground {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 86%; /* slightly wider to give padding */
+            height: 68px;
+            background-color: rgba(0, 0, 0, 0.3); /* black with 30% opacity */
+            border-radius: 10px;
+            z-index: 999; /* just behind the timeline itself */
+        }
+
+
+        #timelineDot {
+            position: absolute;
+            top: 50%;
+            width: 16px;
+            height: 16px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: left 1s ease;
+        }
+
+        #timelineYear {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            transform: translateX(-50%);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="banner">The Future of Fire Project</div>
+    <div id="cesiumContainer"></div>
+    <div id="tooltip"></div>
+    <div id="footerBanner">Created by Adrian Kombe and Abigail Kinaro | 2025</div>
+
+    <div id="legend">
+        <div><span class="legend-color" style="background-color: red;"></span> Past Fire</div>
+        <div><span class="legend-color" style="background-color: greenyellow;"></span> Fire Station</div>
+        <div><span class="legend-color" style="background-color: yellow;"></span> Boston City Limits</div>
+
+    </div>
+
+    <div id="timelineBackground">
+        <div id="timeline">
+            <div id="timelineLine"></div>
+            <div id="timelineDot"></div>
+            <div id="timelineYear">2012</div>
+        </div>
+    </div>
+    
+    
+    <script>
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlOWEwNjg3YS1mZmUzLTRlYzctYjljMy0xNzI4ZDNjODlhMjYiLCJpZCI6MjkzNzAxLCJpYXQiOjE3NDU4OTU1MjB9.LJnHMaZpEW3h8vIe0tZucLEqlwdpabrXMYbd1-vd44s';
+
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            //imageryProvider: false,
+            imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }), // Bing Maps Aerial
+            baseLayerPicker: false,
+            geocoder: true,
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: true,
+            animation: false,
+            timeline: false,
+            fullscreenButton: false,
+            shouldAnimate: true,
+            selectionIndicator: false // We'll implement our own hover effect
+        });
+
+        viewer.scene.skyBox.show = true;
+        viewer.scene.skyAtmosphere.show = true;
+        viewer.scene.backgroundColor = Cesium.Color.BLACK;
+        viewer.scene.globe.show = true;
+
+        // Variables to track hover state
+        let hoveredFeature = null;
+        let originalFeatureColor = null;
+        const tooltip = document.getElementById('tooltip');
+
+        async function loadBostonOSM() {
+            const osmBuildings = await Cesium.createOsmBuildingsAsync();
+            viewer.scene.primitives.add(osmBuildings);
+
+            // 🔥 Fire IDs that will animate to red
+            const fireElementIds = [
+                212122814,
+                29519607,
+                29936495,
+                468453872,
+                29520542,
+                29744976,
+                29827954,
+                29820890,
+                29828845,
+                687795567
+            ];
+
+            let currentIndex = 0;
+
+            function animateFires() {
+                // Style conditions start here
+                const conditions = [];
+
+                // ✅ Always make fire stations green
+                conditions.push(["${building} === 'fire_station'", "color('greenyellow')"]);
+                //conditions.push([`${building} === 'fire_station'`, "color('green')"]);
+
+
+                // 🔥 Add red for activated fire buildings
+                for (let i = 0; i < currentIndex; i++) {
+                    const id = fireElementIds[i];
+                    conditions.push([`$\{elementId} === ${id}`, "color('red')"]);
+                }
+
+                // 🌟 Default color for everything else
+                conditions.push(["true", "color('grey')"]);
+
+                osmBuildings.style = new Cesium.Cesium3DTileStyle({
+                    color: { conditions }
+                });
+
+                // Animate next fire building if any left
+                if (currentIndex < fireElementIds.length) {
+                    currentIndex++;
+                    setTimeout(animateFires, 3000); // Adjust interval
+                }
+            }
+
+            animateFires();
+
+            // Optional: fly to Boston
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(-71.0589, 42.3601, 1500),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-30),
+                    roll: 0.0
+                }
+            });
+        }
+        async function loadBostonBoundary() {
+            const cityOutline = await Cesium.GeoJsonDataSource.load('boston_boundary.json', {
+                stroke: Cesium.Color.YELLOW,       // Line color
+                fill: Cesium.Color.TRANSPARENT,     // No fill, just outline
+                strokeWidth: 30                      // Thickness of the boundary line
+            });
+            viewer.dataSources.add(cityOutline);
+        }
+        
+        // === TIMELINE ANIMATION ===
+        const timelineDot = document.getElementById('timelineDot');
+        const timelineYear = document.getElementById('timelineYear');
+        const timeline = document.getElementById('timeline');
+
+        const startYear = 2012;
+        const endYear = 2025;
+        const totalYears = endYear - startYear;
+        let currentYear = startYear;
+
+        function updateTimeline() {
+            const percent = (currentYear - startYear) / totalYears;
+            const timelineWidth = timeline.offsetWidth;
+            const dotPosition = percent * timelineWidth;
+
+            timelineDot.style.left = `${dotPosition}px`;
+            timelineYear.style.left = `${dotPosition}px`;
+            timelineYear.textContent = currentYear;
+        }
+
+        updateTimeline(); // Set initial position
+
+        const interval = setInterval(() => {
+            if (currentYear >= endYear) {
+                clearInterval(interval);
+                return;
+            }
+            currentYear++;
+            updateTimeline();
+        }, 5000); // 5 seconds per year
+
+
+        loadBostonOSM();
+        loadBostonBoundary();
+
+    </script>
+    
+</body>
+</html>

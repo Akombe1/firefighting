@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # === SETTINGS ===
-INPUT_CSV = 'test_this.csv'
+INPUT_CSV = 'confirmedFires.csv'
 DATE_COLUMN = 'alarm_date'
-OUTPUT_IMAGE_BAR = 'incidents_per_year.png'
-OUTPUT_IMAGE_PIE = 'incidents_per_season.png'
+OUTPUT_IMAGE_BAR = 'realfiresperyear.png'
+OUTPUT_IMAGE_PIE = 'realfiresperseason.png'
 
 # === MAIN SCRIPT ===
 
