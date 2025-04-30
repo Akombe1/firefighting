@@ -1,8 +1,8 @@
 import pandas as pd
 
 # === SETTINGS ===
-INPUT_CSV = 'addressWithDates.csv'
-OUTPUT_CSV = 'dated_fires.csv'
+INPUT_CSV = 'firestations.csv'
+OUTPUT_CSV = 'final_firestations.csv'
 
 # === MAIN ===
 def combine_address_components(file_path):
