@@ -66,3 +66,9 @@ cd fire-visualization
 npm install
 npm start
 ```
+
+## Technologies Used
+
+Python: pandas, scikit-learn, seaborn, imbalanced-learn
+JavaScript/React: React Router, JSX, custom CSS
+Mapbox GL JS: 3D building rendering, clustering, emoji markers
