@@ -6,9 +6,8 @@ from dotenv import load_dotenv
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 # === SETTINGS ===
-CSV_FILE = 'confirmedFires_fixed.csv'  # Same file for reading and writing
-WAIT_BETWEEN_CALLS = 0.05  # seconds, to respect API usage limits
-
+CSV_FILE = 'firestations.csv'  # Same file for reading and writing
+WAIT_BETWEEN_CALLS = 0.05  # calling at 20x the recommended limit, until I get blocked 
 load_dotenv("pass.env")
 api_key = os.getenv("API_KEY")
 

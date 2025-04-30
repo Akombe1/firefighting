@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 # === SETTINGS ===
-CSV_FILE = 'final_data.csv'
+CSV_FILE = 'firestations.csv'
 ADDRESS_COLUMN = 'full_address'
 LAT_COLUMN = 'latitude'
 LON_COLUMN = 'longitude'
@@ -15,6 +15,12 @@ load_dotenv("pass.env")
 api_key = os.getenv("GOOGLE_API_KEY")
 
 # === INITIALIZE GEOCODER ===
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+if not GOOGLE_API_KEY:
+    raise ValueError("🚫 GOOGLE_API_KEY is not set. Check your .env file or environment.")
+
 geolocator = GoogleV3(api_key=GOOGLE_API_KEY, timeout=10)
 
 def geocode_address(address):

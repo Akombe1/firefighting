@@ -6,7 +6,7 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script> <!-- For CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -35,32 +35,71 @@
             padding: 8px 0;
             z-index: 1;
         }
+        #timelineContainer {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            z-index: 2;
+        }
+        #timelineTrack {
+            position: relative;
+            margin: 0 auto;
+            width: 80%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+        }
+        #timelineProgress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 8px;
+            background: orange;
+            border-radius: 4px;
+            width: 0%;
+        }
+        #timelineLabel {
+            position: absolute;
+            top: -30px;
+            left: 0%;
+            transform: translateX(-50%);
+            color: orange;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
 <div id="banner">The Future of Fire Project</div>
 <div id="map"></div>
+<div id="timelineContainer">
+  <div id="timelineTrack">
+    <div id="timelineProgress"></div>
+    <div id="timelineLabel">2012</div>
+  </div>
+</div>
 <div id="footerBanner">Created by Adrian Kombe and Abigail Kinaro | 2025</div>
 
 <script>
-    // Replace this with your real Mapbox token!
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWtvbWJlMjAyNiIsImEiOiJjbWEyMHM0N2MwZTdxMmpvbGljenl0MWd2In0.AL_fyo0s9omrXgdBIjl1Mw';
-
+    
+    
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/light-v11', // Light map style
-        center: [-71.0589, 42.3601], // Boston
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [-71.0589, 42.3601],
         zoom: 13,
-        pitch: 60, // Tilt for 3D
+        pitch: 60,
         bearing: -20,
         antialias: true
     });
-
+    
     map.on('load', () => {
         console.log("✅ Mapbox map loaded");
-
-        // Enable 3D buildings
+    
         map.addLayer({
             'id': '3d-buildings',
             'source': 'composite',
@@ -75,87 +114,105 @@
                 'fill-extrusion-opacity': 0.6
             }
         });
-                // === ADD THIS ===
-
-        // Load the Boston boundary GeoJSON
-        map.addSource('boston-boundary', {
-            type: 'geojson',
-            data: 'boston_boundary.json' // Make sure this file is in the same folder
-        });
-
-        // Add a line layer to show the boundary
-        map.addLayer({
-            'id': 'boston-boundary-line',
-            'type': 'line',
-            'source': 'boston-boundary',
-            'paint': {
-                'line-color': 'yellow',
-                'line-width': 4
-            }
-        });
-
-        // Optional: add a transparent fill inside the boundary
-        map.addLayer({
-            'id': 'boston-boundary-fill',
-            'type': 'fill',
-            'source': 'boston-boundary',
-            'paint': {
-                'fill-color': 'yellow',
-                'fill-opacity': 0.1
-            }
-        });
-
-
-        // 🔥 Now load your fire locations from CSV
-        fetch('rounded_file.csv')
-            .then(response => {
-                if (!response.ok) throw new Error("CSV load failed");
-                return response.text();
-            })
-            
+    
+        fetch('final_data.csv')
+            .then(response => response.text())
             .then(csvData => {
                 const parsed = Papa.parse(csvData, { header: true });
-                const fireLocations = parsed.data.filter(row => row.latitude && row.longitude);
-
-                console.log(`✅ Loaded ${fireLocations.length} fire points`);
-
-                let index = 0;
-                const totalFires = fireLocations.length;
-                const duration = 30000; // 30 seconds
-                const intervalTime = duration / totalFires; // How fast to add fires
-                console.log(`Adding fires every ${intervalTime.toFixed(2)} ms`);
-                const interval = setInterval(() => {
-                    if (index >= totalFires) return; // Don't do anything if all fires added
-
-                    const fire = fireLocations[index];
-                    const lat = parseFloat(fire.latitude);
-                    const lon = parseFloat(fire.longitude);
-
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        const el = document.createElement('div');
-                        el.className = 'fire-emoji-marker';
-                        el.textContent = '🔥';
-                        el.style.fontSize = '24px';
-                        el.style.lineHeight = '24px';
-
-                        new mapboxgl.Marker(el)
-                            .setLngLat([lon, lat])
-                            .setPopup(new mapboxgl.Popup().setText(fire.full_address))
-                            .addTo(map);
+                const allFires = parsed.data.filter(row => row.latitude && row.longitude && row.alarm_date);
+    
+                // ✅ Safely group fires by year using Date parsing
+                const firesByYear = {};
+                allFires.forEach(row => {
+                    const rawDate = row.alarm_date?.trim();
+                    if (!rawDate) return;
+    
+                    let year;
+                    try {
+                        const parsedDate = new Date(rawDate);
+                        if (!isNaN(parsedDate)) {
+                            year = parsedDate.getFullYear().toString();
+                        }
+                    } catch (e) {
+                        console.warn("Invalid date:", rawDate);
                     }
-
-                    index++;
-                }, intervalTime);
-
-                // 🛑 Hard timeout to kill interval after exactly 30 seconds
-                setTimeout(() => {
-                    clearInterval(interval);
-                    console.log("✅ Hard stop: Timer cleared after 30s");
-                }, duration);
-
+    
+                    if (year) {
+                        if (!firesByYear[year]) firesByYear[year] = [];
+                        firesByYear[year].push(row);
+                    }
+                });
+    
+                const years = Object.keys(firesByYear).sort();
+                let yearIndex = 0;
+    
+                const showFiresForYear = (year) => {
+                    console.log(`🔥 Showing fires for ${year}`);
+                    const fires = firesByYear[year];
+                    if (!fires || fires.length === 0) return;
+    
+                    let index = 0;
+                    const intervalTime = 30000 / fires.length;
+                    const fireMarkers = [];
+    
+                    // Timeline elements
+                    const timelineProgress = document.getElementById('timelineProgress');
+                    const timelineLabel = document.getElementById('timelineLabel');
+                    timelineProgress.style.width = '0%';
+                    timelineLabel.textContent = year;
+    
+                    const timelineStart = Date.now();
+                    const timelineInterval = setInterval(() => {
+                        const elapsed = Date.now() - timelineStart;
+                        const percent = Math.min(elapsed / 30000, 1);
+                        timelineProgress.style.width = `${percent * 100}%`;
+                        timelineLabel.style.left = `${percent * 100}%`;
+                    }, 100);
+    
+                    const interval = setInterval(() => {
+                        if (index >= fires.length) return;
+                        const fire = fires[index];
+                        const lat = parseFloat(fire.latitude);
+                        const lon = parseFloat(fire.longitude);
+    
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            const el = document.createElement('div');
+                            el.className = 'fire-emoji-marker';
+                            el.textContent = '🔥';
+                            el.style.fontSize = '24px';
+                            el.style.lineHeight = '24px';
+    
+                            const marker = new mapboxgl.Marker(el)
+                                .setLngLat([lon, lat])
+                                .setPopup(new mapboxgl.Popup().setText(fire.full_address || 'Fire Location'))
+                                .addTo(map);
+    
+                            fireMarkers.push(marker);
+                        }
+    
+                        index++;
+                    }, intervalTime);
+    
+                    setTimeout(() => {
+                        clearInterval(interval);
+                        clearInterval(timelineInterval);
+                        fireMarkers.forEach(marker => marker.remove());
+                        console.log(`✅ Finished ${year}`);
+    
+                        setTimeout(() => {
+                            yearIndex++;
+                            if (yearIndex < years.length) {
+                                showFiresForYear(years[yearIndex]);
+                            }
+                        }, 2000);
+                    }, 30000);
+                };
+    
+                showFiresForYear(years[yearIndex]);
             });
     });
-</script>
+    </script>
+    
 
 </body>
 </html>
