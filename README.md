@@ -27,7 +27,7 @@ Using over 600,000 incident records, we built two predictive models. One to dete
 - Accuracy: ~85%
 - Key features: Hour of day, day of week, and property use code
 
-### 🔹 Multiclass Classifier: What Type of Incident?
+### Multiclass Classifier: What Type of Incident?
 - Model: Random Forest + SMOTE
 - Accuracy: ~40%
 - Handles 8 classes including fire, EMS, service calls, and false alarms
