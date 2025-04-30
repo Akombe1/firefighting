@@ -24,18 +24,17 @@ function Heatmap() {
       <section className="card">
         <h2>Interactive Heatmap</h2>
         <div style={{ height: '600px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
-          <iframe
-            src="https://your-mapbox-heatmap-url.com"
-            title="Confirmed Fires Heatmap"
-            width="100%"
-            height="600px"
-            style={{ border: "2px solid #ff6b3d", borderRadius: "10px", boxShadow: "0px 4px 10px rgba(255, 107, 61, 0.3)" }}
-            allowFullScreen
-          ></iframe>
+        <iframe
+          src="/maps/heatmap.html"
+          title="Confirmed Fires Heatmap"
+          width="100%"
+          height="600px"
+          loading="lazy"
+          style={{ border: "2px solid #ff6b3d", borderRadius: "10px", boxShadow: "0px 4px 10px rgba(255, 107, 61, 0.3)" }}
+          allowFullScreen
+        ></iframe>
+
         </div>
-        <p style={{ marginTop: '10px' }}>
-          Having issues? Open it here: <a href="https://your-mapbox-heatmap-url.com" target="_blank" rel="noopener noreferrer">Open Fullscreen</a>
-        </p>
       </section>
 
       <footer>

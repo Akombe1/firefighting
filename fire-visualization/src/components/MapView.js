@@ -12,29 +12,30 @@ function MapView() {
       <section className="card">
         <h2>About the Visualization</h2>
         <p>
-          This interactive 3D map overlays fire incident predictions onto a geospatial model of Boston using Mapbox.
-          It allows viewers to explore spatial patterns in emergency response and incident severity across time and neighborhoods.
+          This interactive 3D map visualizes fire activity across Boston, animating year-by-year fire incidents from 2012 to 2024. 
+          It uses building height, camera tilt, and fire emoji markers to dynamically highlight spatial fire patterns over time.
         </p>
         <p>
-          We use geo-referenced fire data, paired with property use and time-of-day signals, to visualize hot zones for likely fire events.
+          The map is built with Mapbox GL JS and leverages CSV-based location data processed through PapaParse. 
+          Each fire is represented with a marker, and the animation progresses chronologically.
         </p>
       </section>
 
       <section className="card">
         <h2>Explore the 3D Map</h2>
-        <div style={{ height: '600px', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
-          <iframe
-            src="https://your-mapbox-url.com"
-            title="Mapbox 3D Fire Risk Map"
-            width="100%"
-            height="600px"
-            style={{ border: "2px solid #ff6b3d", borderRadius: "10px", boxShadow: "0px 4px 10px rgba(255, 107, 61, 0.3)" }}
-            allowFullScreen
-          ></iframe>
-        </div>
-        <p style={{ marginTop: '10px' }}>
-          Trouble loading? Try this link: <a href="https://your-mapbox-url.com" target="_blank" rel="noopener noreferrer">Open Fullscreen</a>
-        </p>
+        <iframe
+          src="/maps/index.html"
+          title="Boston Fire 3D Map"
+          width="100%"
+          height="600px"
+          loading="lazy"
+          style={{
+            border: "2px solid #ff6b3d",
+            borderRadius: "10px",
+            boxShadow: "0px 4px 10px rgba(255, 107, 61, 0.3)",
+          }}
+          allowFullScreen
+        ></iframe>
       </section>
 
       <footer>
@@ -45,4 +46,3 @@ function MapView() {
 }
 
 export default MapView;
-

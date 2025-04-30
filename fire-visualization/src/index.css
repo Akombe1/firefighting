@@ -11,3 +11,8 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.fire-emoji-marker {
+  font-size: 24px;
+  line-height: 24px;
+}
